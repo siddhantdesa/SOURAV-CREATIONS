@@ -1,173 +1,231 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft, Upload, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ShoppingBag, Heart, ArrowLeft, RefreshCw, Star, ShieldCheck, Truck } from 'lucide-react';
+import { productService } from '../services/productService';
 import { useCart } from '../context/CartContext';
-
-const productsData = {
-  "1": {
-    id: "1",
-    name: "3D Photo Shadow Box",
-    price: 1299,
-    description: "A beautifully illuminated 3D shadow box framed with customized layer cutouts and warm LED backlighting. Perfect for anniversaries and birthdays.",
-    image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80"
-  },
-  "2": {
-    id: "2",
-    name: "Personalized Resin Keychain",
-    price: 499,
-    description: "Handcrafted crystal clear resin keychain embedded with gold foil and custom initial name lettering.",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
-  }
-};
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, toggleWishlist, wishlistItems } = useCart();
+  
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const product = productsData[id] || productsData["1"];
+  useEffect(() => {
+    async function loadProductData() {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const [customText, setCustomText] = useState('');
-  const [previewImage, setPreviewImage] = useState(null);
-  const [added, setAdded] = useState(false);
+        // Fetch primary product details
+        const productRes = await productService.getProductById(id);
+        const fetchedProduct = productRes?.data || productRes;
+        setProduct(fetchedProduct);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPreviewImage(URL.createObjectURL(file));
+        // Fetch related products based on category or general catalog
+        try {
+          const relatedRes = await productService.getProducts({ category: fetchedProduct?.category });
+          const allRelated = Array.isArray(relatedRes) ? relatedRes : relatedRes?.data || [];
+          setRelatedProducts(allRelated.filter(p => (p._id || p.id) !== id).slice(0, 4));
+        } catch (rErr) {
+          console.error("Could not load related products:", rErr);
+        }
+
+      } catch (err) {
+        setError("Failed to load product details from server.");
+      } finally {
+        setLoading(false);
+      }
     }
-  };
 
-  const handleAddToCart = () => {
-    addToCart({
-      ...product,
-      customText,
-      uploadedImage: previewImage
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+    if (id) {
+      loadProductData();
+    }
+  }, [id]);
+
+  const isWishlisted = product ? wishlistItems.some(item => (item._id || item.id) === (product._id || product.id)) : false;
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px' }}>
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'none',
-          border: 'none',
-          color: '#6b7280',
-          cursor: 'pointer',
-          marginBottom: '24px',
-          fontSize: '14px',
-          fontWeight: '500'
-        }}
-      >
-        <ArrowLeft size={16} /> Back to Shop
-      </button>
+    <div style={{ fontFamily: 'Georgia, serif', backgroundColor: '#f9f9f9', minHeight: '100vh', padding: '40px 24px 80px 24px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        
+        {/* Back Link */}
+        <Link to="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#555', fontFamily: 'sans-serif', fontSize: '14px', marginBottom: '32px' }}>
+          <ArrowLeft size={16} /> Back to Shop
+        </Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'start' }}>
-        {/* Product Image */}
-        <div>
-          <img
-            src={product.image}
-            alt={product.name}
-            style={{ width: '100%', borderRadius: '16px', objectFit: 'cover', maxHeight: '480px' }}
-          />
-        </div>
-
-        {/* Product Details & Customization Form */}
-        <div>
-          <h1 style={{ fontSize: '28px', margin: '0 0 12px 0', color: '#111827' }}>{product.name}</h1>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: '0 0 16px 0' }}>
-            ?{product.price}
-          </p>
-          <p style={{ color: '#4b5563', lineHeight: '1.6', marginBottom: '28px' }}>
-            {product.description}
-          </p>
-
-          <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', margin: '0 0 16px 0', color: '#111827' }}>Personalization</h3>
-
-            {/* Custom Text Field */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-                Custom Name / Text to Print
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Parth & Ananya"
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #d1d5db',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            {/* Photo Upload Field */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-                Upload Photo (Optional)
-              </label>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                border: '1px dashed #9ca3af',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                backgroundColor: '#f9fafb',
-                color: '#4b5563',
-                fontSize: '14px'
-              }}>
-                <Upload size={16} /> Choose Photo
-                <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
-              </label>
-
-              {previewImage && (
-                <div style={{ marginTop: '12px' }}>
-                  <img
-                    src={previewImage}
-                    alt="Uploaded preview"
-                    style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #ddd' }}
-                  />
-                </div>
-              )}
-            </div>
+        {/* Loading State */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '80px 0', fontFamily: 'sans-serif', color: '#666' }}>
+            <RefreshCw className="animate-spin" style={{ display: 'inline-block', marginBottom: '12px' }} size={28} />
+            <p>Loading product details...</p>
           </div>
+        )}
 
-          <button
-            onClick={handleAddToCart}
-            style={{
-              width: '100%',
-              backgroundColor: added ? '#059669' : '#111827',
-              color: '#ffffff',
-              border: 'none',
-              padding: '14px',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {added ? <Check size={20} /> : <ShoppingBag size={20} />}
-            {added ? 'Added to Cart!' : 'Add to Cart'}
-          </button>
-        </div>
+        {/* Error State */}
+        {error && !loading && (
+          <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#fff3f3', border: '1px solid #ffcdd2', borderRadius: '4px', fontFamily: 'sans-serif' }}>
+            <p style={{ color: '#d32f2f', margin: 0 }}>{error}</p>
+          </div>
+        )}
+
+        {/* Product Details Section */}
+        {!loading && !error && product && (
+          <>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '48px',
+              backgroundColor: '#ffffff',
+              padding: '36px',
+              border: '1px solid #eee',
+              marginBottom: '60px'
+            }}>
+              
+              {/* Image Container */}
+              <div>
+                <img
+                  src={product.image || '/images/3d-frame.jpeg'}
+                  alt={product.name}
+                  style={{ width: '100%', height: '420px', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+
+              {/* Info Container */}
+              <div style={{ fontFamily: 'sans-serif', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '11px', color: '#888', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  {product.category || 'Handcrafted'}
+                </span>
+                
+                <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '32px', fontWeight: '400', margin: '0 0 16px 0', color: '#1a1a1a' }}>
+                  {product.name}
+                </h1>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+                    â‚¹{product.price}
+                  </span>
+                  {product.originalPrice && (
+                    <span style={{ fontSize: '16px', color: '#999', textDecoration: 'line-through' }}>
+                      â‚¹{product.originalPrice}
+                    </span>
+                  )}
+                </div>
+
+                <p style={{ color: '#555', fontSize: '15px', lineHeight: '1.6', marginBottom: '32px' }}>
+                  {product.description || "Beautifully handcrafted artisanal creation made with precision and care. Perfect for personalized gifting or enhancing home decor."}
+                </p>
+
+                {/* Quantity Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '500' }}>Quantity:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ccc' }}>
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      style={{ padding: '8px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}
+                    >
+                      -
+                    </button>
+                    <span style={{ padding: '0 12px', fontSize: '14px', fontWeight: '600' }}>{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      style={{ padding: '8px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
+                  <button
+                    onClick={() => addToCart(product, quantity)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#1a1a1a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '16px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      letterSpacing: '1px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <ShoppingBag size={18} /> ADD TO CART
+                  </button>
+
+                  <button
+                    onClick={() => toggleWishlist(product)}
+                    style={{
+                      padding: '16px',
+                      border: '1px solid #ccc',
+                      backgroundColor: isWishlisted ? '#fff0f0' : '#ffffff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Heart size={18} color={isWishlisted ? '#e53935' : '#444'} fill={isWishlisted ? '#e53935' : 'none'} />
+                  </button>
+                </div>
+
+                {/* Trust Badges */}
+                <div style={{ borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', gap: '24px', fontSize: '12px', color: '#666' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={16} /> 100% Quality Assured
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Truck size={16} /> Safe Pan-India Delivery
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Related Products Section */}
+            {relatedProducts.length > 0 && (
+              <div>
+                <h2 style={{ fontSize: '24px', fontWeight: '400', marginBottom: '24px', color: '#1a1a1a' }}>
+                  You Might Also Like
+                </h2>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+                  gap: '24px'
+                }}>
+                  {relatedProducts.map((relProduct) => (
+                    <div key={relProduct._id || relProduct.id} style={{ backgroundColor: '#ffffff', border: '1px solid #eee' }}>
+                      <Link to={`/product/${relProduct._id || relProduct.id}`}>
+                        <img
+                          src={relProduct.image || '/images/3d-frame.jpeg'}
+                          alt={relProduct.name}
+                          style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
+                        />
+                      </Link>
+                      <div style={{ padding: '12px', fontFamily: 'sans-serif' }}>
+                        <Link to={`/product/${relProduct._id || relProduct.id}`} style={{ textDecoration: 'none', color: '#111' }}>
+                          <h3 style={{ fontSize: '13px', fontWeight: '600', margin: '0 0 8px 0', fontFamily: 'Georgia, serif' }}>
+                            {relProduct.name}
+                          </h3>
+                        </Link>
+                        <span style={{ fontSize: '13px', fontWeight: '600' }}>â‚¹{relProduct.price}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

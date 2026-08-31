@@ -1,26 +1,37 @@
 import { CONFIG } from './config';
 
-export const apiClient = async (endpoint, options = {}) => {
-  if (CONFIG.USE_MOCK) {
-    throw new Error('apiClient executed directly while USE_MOCK is active.');
-  }
-
-  const token = localStorage.getItem('sc_auth_token');
+async function request(endpoint, options = {}) {
+  const token = localStorage.getItem('token');
+  
   const headers = {
     'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   };
 
-  const response = await fetch(`${CONFIG.API_URL}${endpoint}`, {
+  const config = {
     ...options,
     headers,
-  });
+  };
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP Error ${response.status}`);
+  try {
+    const response = await fetch(`${CONFIG.API_URL}${endpoint}`, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `API error (${response.status})`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`API Error [${endpoint}]:`, error.message);
+    throw error;
   }
+}
 
-  return response.json();
+export const apiClient = {
+  get: (endpoint, options) => request(endpoint, { ...options, method: 'GET' }),
+  post: (endpoint, body, options) => request(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+  put: (endpoint, body, options) => request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  delete: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
 };

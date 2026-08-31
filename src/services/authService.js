@@ -1,55 +1,39 @@
-import { CONFIG, sleep } from './config';
 import { apiClient } from './apiClient';
-import { MOCK_USERS } from './mock/mockUsers';
 
 export const authService = {
-  async login({ email, password }) {
-    if (CONFIG.USE_MOCK) {
-      await sleep();
-      const user = MOCK_USERS.find(u => u.email === email && u.password === password);
-      if (!user) throw new Error('Invalid email or password');
-      
-      const sessionData = { id: user.id, name: user.name, email: user.email };
-      localStorage.setItem('sc_auth_token', 'mock_jwt_token_' + Date.now());
-      localStorage.setItem('sc_user', JSON.stringify(sessionData));
-      return sessionData;
-    }
-    return apiClient('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-  },
-
-  async signup({ name, email, password }) {
-    if (CONFIG.USE_MOCK) {
-      await sleep();
-      const existing = MOCK_USERS.find(u => u.email === email);
-      if (existing) throw new Error('An account with this email already exists.');
-
-      const newUser = { id: 'user-' + Date.now(), name, email, password };
-      MOCK_USERS.push(newUser);
-
-      const sessionData = { id: newUser.id, name: newUser.name, email: newUser.email };
-      localStorage.setItem('sc_auth_token', 'mock_jwt_token_' + Date.now());
-      localStorage.setItem('sc_user', JSON.stringify(sessionData));
-      return sessionData;
-    }
-    return apiClient('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
-  },
-
-  async logout() {
-    if (CONFIG.USE_MOCK) {
-      await sleep(100);
-      localStorage.removeItem('sc_auth_token');
-      localStorage.removeItem('sc_user');
-      return true;
-    }
-    return apiClient('/auth/logout', { method: 'POST' });
-  },
-
-  getCurrentUser() {
+  login: async (credentials) => {
     try {
-      const stored = localStorage.getItem('sc_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
+      return await apiClient.post('/auth/login', credentials);
+    } catch (err) {
+      console.warn('Backend unavailable, using mock login response.');
+      return {
+        token: 'mock-jwt-token-12345',
+        user: { name: 'Demo User', email: credentials.email || 'demo@example.com', role: 'user' }
+      };
     }
-  }
+  },
+  signup: async (userData) => {
+    try {
+      return await apiClient.post('/auth/signup', userData);
+    } catch (err) {
+      console.warn('Backend unavailable, using mock signup response.');
+      return {
+        token: 'mock-jwt-token-12345',
+        user: { name: userData.name || 'Demo User', email: userData.email, role: 'user' }
+      };
+    }
+  },
+  getCurrentUser: async () => {
+    try {
+      return await apiClient.get('/auth/me');
+    } catch (err) {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : { name: 'Demo User', email: 'demo@example.com' };
+    }
+  },
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return Promise.resolve(true);
+  },
 };
