@@ -9,28 +9,28 @@ const products = [
     name: "3D Photo Shadow Box",
     price: 1299,
     category: "Shadow Boxes",
-    image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80"
+    image: "/images/3d-frame.jpeg"
   },
   {
     id: "2",
-    name: "Personalized Resin Keychain",
-    price: 499,
-    category: "Keychains",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+    name: "Anniversary Special Frame",
+    price: 1499,
+    category: "Custom Frames",
+    image: "/images/anniversary-frame.jpeg"
   },
   {
     id: "3",
-    name: "Custom LED Name Lamp",
-    price: 899,
-    category: "Lamps",
-    image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=80"
+    name: "Cricket Fan Shadow Box",
+    price: 999,
+    category: "Theme Frames",
+    image: "/images/cricket-frame.jpeg"
   },
   {
     id: "4",
-    name: "Handcrafted Wooden Frame",
+    name: "Rakhi Special Gift Set",
     price: 799,
-    category: "Frames",
-    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80"
+    category: "Festive Gifts",
+    image: "/images/rakhi-special.jpeg"
   }
 ];
 
@@ -39,26 +39,23 @@ export default function Shop() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 24px' }}>
-      {/* Hero Banner */}
       <div style={{
         backgroundColor: '#111827',
         borderRadius: '16px',
-        padding: '48px 32px',
+        padding: '40px',
         color: '#ffffff',
         marginBottom: '40px',
         textAlign: 'center'
       }}>
-        <h1 style={{ fontSize: '36px', fontWeight: '800', margin: '0 0 12px 0' }}>Handcrafted Personalized Gifts</h1>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 12px 0' }}>Sourav Creations</h1>
         <p style={{ color: '#9ca3af', fontSize: '16px', margin: 0 }}>
-          Make every moment special with customized shadow boxes, keychains, and lamps.
+          Customized Handcrafted Gifts & Photo Keepsakes
         </p>
       </div>
 
-      {/* Product Grid */}
-      <h2 style={{ fontSize: '22px', margin: '0 0 24px 0', color: '#111827' }}>Featured Products</h2>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
         gap: '24px'
       }}>
         {products.map((product) => (
@@ -70,27 +67,21 @@ export default function Shop() {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <Link to={`/product/${product.id}`} style={{ overflow: 'hidden', display: 'block' }}>
+            <Link to={`/product/${product.id}`}>
               <img
                 src={product.image}
                 alt={product.name}
-                style={{
-                  width: '100%',
-                  height: '240px',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'transform 0.2s'
-                }}
+                style={{ width: '100%', height: '220px', objectFit: 'cover' }}
               />
             </Link>
 
             <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase' }}>
                   {product.category}
                 </span>
                 <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', color: '#111827' }}>
-                  <h3 style={{ fontSize: '16px', margin: '4px 0 8px 0', fontWeight: '600' }}>
+                  <h3 style={{ fontSize: '16px', margin: '4px 0 6px 0', fontWeight: '600' }}>
                     {product.name}
                   </h3>
                 </Link>
@@ -99,7 +90,7 @@ export default function Shop() {
                 </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 40px', gap: '8px' }}>
                 <button
                   onClick={() => addToCart(product)}
                   style={{
@@ -109,7 +100,7 @@ export default function Shop() {
                     borderRadius: '8px',
                     padding: '10px',
                     fontWeight: '500',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -117,7 +108,7 @@ export default function Shop() {
                     gap: '6px'
                   }}
                 >
-                  <ShoppingBag size={16} /> Add to Cart
+                  <ShoppingBag size={15} /> Add to Cart
                 </button>
 
                 <Link to={`/product/${product.id}`}>
@@ -133,7 +124,7 @@ export default function Shop() {
                     cursor: 'pointer',
                     color: '#374151'
                   }}>
-                    <Eye size={18} />
+                    <Eye size={16} />
                   </button>
                 </Link>
               </div>
